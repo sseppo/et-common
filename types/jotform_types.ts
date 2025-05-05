@@ -117,4 +117,23 @@ export interface JotFormData {
   };
 }
 
+export interface rankedResult {
+  rank: number;
+  nrOfOthersAtSameRank: number;
+  record: number;
+  byPerson: string;
+  at?: string;
+  byInstitute?: string;
+  tulos: JotForm_Content;
+}
+
+export interface rankedList {
+  nrOfRanks: number;
+  nrOfResults: number;
+  results: rankedResult[];
+  insertAtDivId: string;
+  referenceId: string;
+  modifiedAt: Date;
+}
+
 // TODO: saako näitä jostain suoraan jotformista?

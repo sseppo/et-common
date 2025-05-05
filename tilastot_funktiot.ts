@@ -8,8 +8,9 @@ import {
   lajit,
   sukupuolet,
   montakoOli,
+  rankedResult,
+  rankedList,
 } from "./types/jotform_types";
-import { object } from "webflow-api/core/schemas";
 
 interface sortParams {
   tuloksetRawArr: JotForm_Content[];
@@ -29,11 +30,28 @@ interface bestOfParams {
   orderDirection: "asc" | "desc";
 }
 
+interface filterList {
+  toBeFilteredObjArray: JotForm_Content[];
+  byField: string;
+  byValue: string | number;
+}
+
 interface answerParams {
   answers: {
     [key: number]: Vastaukset[];
   };
   answerOf: string;
+}
+
+interface answerParamsShort {
+  answers: {
+    [key: number]: Vastaukset[];
+  };
+}
+interface bestFilteri {
+  filteri: string | sarjat[] | lajit[] | sukupuolet[] | montakoOli[];
+  tulos: number;
+  formObj: JotForm_Content;
 }
 
 export const sortBy = async (parametrit: sortParams) => {
@@ -70,11 +88,11 @@ export const sortBy = async (parametrit: sortParams) => {
         // return vastauksetEka && vastauksetEka.text === value;
       })
     );
-    console.log("filteredArray", filteredArray);
 
     return filteredArray;
   } catch (error) {
     console.error("Error in sortBy function:", error);
+    return null;
   }
 };
 
@@ -103,11 +121,10 @@ export const orderBy = async (orderParams: orderParams) => {
       }
     });
 
-    console.log("sortedArray", sortedArray);
-
     return sortedArray;
   } catch (error) {
     console.error("Error in orderBy function:", error);
+    return null;
   }
 };
 
@@ -117,7 +134,6 @@ export const getAnswerOf = async (answerParams: answerParams) => {
 
     const vastaukset = [...Object.values(answers)].flat();
 
-    //console.log("etsutään vastauksia", answerOf, vastaukset);
     const vastauksetEka = vastaukset.find((answerRaw: Vastaukset) => {
       if (answerRaw.name === answerOf) {
         return answerRaw.answer;
@@ -130,15 +146,74 @@ export const getAnswerOf = async (answerParams: answerParams) => {
   return null;
 };
 
-interface bestFilteri {
-  filteri: string | sarjat[] | lajit[] | sukupuolet[] | montakoOli[];
-  tulos: number;
-  formObj: JotForm_Content;
-}
+export const getString = async (answerOf: string, answers: { [key: number]: Vastaukset[] }) => {
+  try {
+    var name = await getAnswerOf({
+      answers: answers,
+      answerOf: answerOf,
+    });
+
+    if (name === undefined || name === null) {
+      return "Not Defined";
+    } else {
+      return String(name);
+    }
+  } catch (error) {
+    console.error("Error in getAnswerOf function:", error);
+  }
+  return "Not Defined";
+};
+
+export const getNumber = async (answerOf: string, answers: { [key: number]: Vastaukset[] }) => {
+  try {
+    var name = await getAnswerOf({
+      answers: answers,
+      answerOf: answerOf,
+    });
+
+    if (name === undefined || name === null) {
+      return -1;
+    } else {
+      return Number(name);
+    }
+  } catch (error) {
+    console.error("Error in getAnswerOf function:", error);
+  }
+  return -1;
+};
+
+export const getSchool = async (answers: { [key: number]: Vastaukset[] }) => {
+  var name = await getString("oppilaitos", answers);
+  return name;
+};
+
+export const getStudylane = async (answers: { [key: number]: Vastaukset[] }) => {
+  var name = await getString("opintolinja", answers);
+  return name;
+};
+
+export const getWorkplace = async (answers: { [key: number]: Vastaukset[] }) => {
+  var name = await getString("tyopaikka", answers);
+  return name;
+};
+
+export const getEventName = async (answers: { [key: number]: Vastaukset[] }) => {
+  var name = await getString("tapahtumanNimi", answers);
+  return name;
+};
+
+export const getName = async (answers: { [key: number]: Vastaukset[] }) => {
+  var name = await getString("nimiTai", answers);
+  return name;
+};
+
+export const getRecord = async (answers: { [key: number]: Vastaukset[] }) => {
+  var number = await getNumber("tulosSekunteina", answers);
+  return number;
+};
 
 export const sortByBestOf = async (bestOfParams: bestOfParams) => {
   try {
-    console.log("--- sortByBestOf");
     const { tuloksetObjArray, bestOf, orderDirection } = bestOfParams;
 
     const filteredArr: bestFilteri[] = [];
@@ -151,19 +226,18 @@ export const sortByBestOf = async (bestOfParams: bestOfParams) => {
         await getAnswerOf({ answers: value.answers, answerOf: "tulosSekunteina" })
       );
 
-      console.log("filteredArr ennen lisäyksiä", filteredArr);
-      console.log("filterByValue", filterByValue);
-      console.log("bestOfvalue", bestOfvalue);
+      // console.log("filteredArr ennen lisäyksiä", filteredArr);
+      // console.log("filterByValue", filterByValue);
+      // console.log("bestOfvalue", bestOfvalue);
 
       if (!filterByValue && !bestOfvalue) {
-        console.log("ei löytynyt tulsota vaadittuja arvoja, ei lisätä");
+        // console.log("ei löytynyt tulsota vaadittuja arvoja, ei lisätä");
         continue;
       }
       const existingEntry = filteredArr.find((entry: any) => entry.filteri === filterByValue);
 
-      console.log("existingEntry", existingEntry);
       if (existingEntry === undefined) {
-        console.log("ei löytynyt, lisätään uusi");
+        //  console.log("ei löytynyt, lisätään uusi");
         if (filterByValue && bestOfvalue) {
           filteredArr.push({
             filteri: filterByValue,
@@ -177,7 +251,7 @@ export const sortByBestOf = async (bestOfParams: bestOfParams) => {
           },
           */
       } else {
-        console.log("löydettiin, päivitetään tulos");
+        //console.log("löydettiin, päivitetään tulos");
         if (orderDirection === "asc") {
           if (bestOfvalue < existingEntry.tulos) {
             existingEntry.tulos = bestOfvalue;
@@ -190,7 +264,7 @@ export const sortByBestOf = async (bestOfParams: bestOfParams) => {
           }
         }
       }
-      console.log("filteredArr tsekkausten jälkeen ", filteredArr);
+      //console.log("filteredArr tsekkausten jälkeen ", filteredArr);
     }
 
     const sortedArr = filteredArr.sort((a: any, b: any) => {
@@ -213,4 +287,201 @@ export const sortByBestOf = async (bestOfParams: bestOfParams) => {
   return null;
 };
 
-console.log("tilastosivu2");
+export const getAllByAnswerValue = async (params: filterList) => {
+  try {
+    const { toBeFilteredObjArray, byField, byValue } = params;
+
+    const filteredArray = toBeFilteredObjArray.filter((item) => {
+      const answers = [...Object.values(item.answers)].flat();
+      const answer = answers.find((answerRaw: Vastaukset) => answerRaw.name === byField);
+
+      return answer && answer.answer === String(byValue);
+    });
+
+    return filteredArray;
+  } catch (error) {
+    console.error("Error in getAllByAnswer function:", error);
+  }
+  return null;
+};
+
+export const arrangeByRank = async (tuloksetObjArray: JotForm_Content[]) => {
+  const rankedArray: rankedResult[] = [];
+  const rankedList: rankedList = {
+    nrOfRanks: 0,
+    nrOfResults: 0,
+    results: [],
+    insertAtDivId: "",
+    referenceId: "",
+    modifiedAt: new Date(),
+  };
+
+  try {
+    const sortedArray = await orderBy({
+      filteredObjArray: tuloksetObjArray,
+      orderBy: "tulosSekunteina",
+      orderDirection: "desc",
+    });
+
+    if (!sortedArray) {
+      console.error("sortedArray is null or undefined");
+      return null;
+    }
+
+    let currentRank = 1;
+
+    for (let i = 0; i < sortedArray.length; i++) {
+      const tulosSekunteina = await getRecord(sortedArray[i].answers);
+
+      if (tulosSekunteina === undefined || tulosSekunteina === null) {
+        return null;
+      }
+
+      const similarRanks = await getAllByAnswerValue({
+        toBeFilteredObjArray: sortedArray,
+        byField: "tulosSekunteina",
+        byValue: tulosSekunteina,
+      });
+      if (!similarRanks || similarRanks.length === 0) {
+        return null;
+      }
+      const nrOfOthersAtSameRank = similarRanks.length;
+
+      for (let j = 0; j < similarRanks.length; j++) {
+        const tulos = await getRecord(sortedArray[i + j].answers);
+        const person = await getName(sortedArray[i + j].answers);
+        const school = await getSchool(sortedArray[i + j].answers);
+        const venue = await getWorkplace(sortedArray[i + j].answers);
+        const eventName = await getEventName(sortedArray[i + j].answers);
+        const institute = school || venue;
+
+        rankedArray.push({
+          rank: currentRank,
+          nrOfOthersAtSameRank: nrOfOthersAtSameRank,
+          record: tulos,
+          byPerson: person,
+          byInstitute: String(institute),
+          at: String(eventName),
+          tulos: sortedArray[i + j],
+        });
+      }
+      currentRank++;
+      i += nrOfOthersAtSameRank - 1; // Skip the next entries with the same rank
+    }
+
+    rankedList.results = rankedArray;
+    rankedList.nrOfRanks = currentRank;
+    rankedList.nrOfResults = rankedArray.length;
+    rankedList.insertAtDivId = "";
+    rankedList.referenceId = "";
+    rankedList.modifiedAt = new Date();
+
+    return rankedList;
+  } catch (error) {
+    console.error("Error in arrangeByRank function:", error);
+  }
+  return null;
+};
+
+export const prepareHTML = async (rankedList: rankedList, printStyle: string) => {
+  try {
+    const { results, nrOfRanks, nrOfResults } = rankedList;
+
+    let contentToAdd = "";
+
+    const preInfo = "<p>Tuloksia tilastoitu: " + nrOfResults + "</p>";
+
+    for (let i = 0; i < results.length; i++) {
+      const tulosSekunteina = results[i].record;
+
+      var jaettuSija = " ";
+      if (results[i].nrOfOthersAtSameRank > 1) {
+        jaettuSija = " (Jaettu) ";
+      }
+
+      const rankHeader =
+        "<h6>" + results[i].rank + ". Sija" + jaettuSija + ", aika " + tulosSekunteina + " s</h6>";
+
+      var paragraphsAtRank = "";
+
+      for (let j = 0; j < results[i].nrOfOthersAtSameRank; j++) {
+        const tekija = results[i + j].byPerson;
+        const eventName = results[i + j].at || "";
+        const institute = results[i + j].byInstitute || "";
+
+        var className = "";
+        if (j % 2 === 0) {
+          className = " class='parillisetrivit'";
+        }
+
+        if (printStyle === "style-1") {
+          // nimi ja koulu yläriville, paikka alarville
+          var startParagraph = "<p" + className + ">";
+          var firstRow = tekija;
+
+          if (institute !== "" && institute !== "Not Defined") {
+            firstRow += ", " + institute;
+          }
+
+          var secondRow = "";
+          if (eventName !== "" && eventName !== "Not Defined") {
+            secondRow += "<BR /><span class='tilastot-pienifontti'>At " + eventName + "</span>";
+          }
+
+          paragraphsAtRank += startParagraph + firstRow + secondRow + "</p>";
+        } else if (printStyle === "style-2") {
+          if (institute !== "") {
+            // oppilaitos yläriville, nimi alariville
+            var startParagraph = "<p" + className + ">";
+            var firstRow = institute;
+
+            var secondRow = "";
+            var lisays = "";
+            if (eventName !== "" && eventName !== "Not Defined") {
+              lisays = " at " + eventName;
+            }
+            secondRow +=
+              "<BR /><span class='tilastot-pienifontti'>By " + tekija + lisays + "</span>";
+
+            paragraphsAtRank += startParagraph + firstRow + secondRow + "</p>";
+          }
+        } else if (printStyle === "style-3") {
+          // opintolija yläriville, muut alarville
+
+          const opintolinja = (await getStudylane(results[i + j].tulos.answers)) || "";
+          if (opintolinja !== "") {
+            var startParagraph = "<p" + className + ">";
+            var firstRow = opintolinja;
+
+            if (institute !== "" && institute !== "Not Defined") {
+              firstRow += ", " + institute;
+            }
+
+            var secondRow = "";
+            var lisays = "";
+            if (eventName !== "" && eventName !== "Not Defined") {
+              lisays = " at " + eventName;
+            }
+            secondRow +=
+              "<BR /><span class='tilastot-pienifontti'>By " + tekija + lisays + "</span>";
+
+            paragraphsAtRank += startParagraph + firstRow + secondRow + "</p>";
+          }
+        }
+      }
+      i = i + results[i].nrOfOthersAtSameRank - 1; // Skip the next entries with the same rank
+
+      if (rankHeader !== undefined && paragraphsAtRank != "") {
+        const tuloste = rankHeader + paragraphsAtRank;
+        contentToAdd += tuloste;
+      }
+    }
+
+    contentToAdd = preInfo + contentToAdd;
+
+    return contentToAdd;
+  } catch (error) {
+    console.error("Error in prepareHTML function:", error);
+  }
+  return null;
+};
