@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
     try {
       const axiosOptions = {
         method: "GET",
-        url: serverUrl + "/form-info/" + formId,
+        url: serverUrl + "/jotform/form-info/" + formId,
         headers: {
           "Content-Type": "application/json; charset=utf-8",
         },
