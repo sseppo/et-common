@@ -1,0 +1,25 @@
+{
+  "name": "et-common",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "serve": "serve",
+    "build": "esbuild index.ts --bundle --outfile=dist/index.js --watch",
+    "build-splide": "esbuild splide.ts --bundle --outfile=dist/splide.js --watch",
+    "build-koriin": "esbuild lisaa-koriin.ts --bundle --outfile=dist/lisaa-koriin.js --watch",
+    "build-tilastot": "esbuild tilastot.ts --bundle --outfile=dist/tilastot.js --watch"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "serve": "^14.2.4"
+  },
+  "dependencies": {
+    "@splidejs/splide": "^4.1.4",
+    "axios": "^1.9.0",
+    "webflow-api": "^3.1.1"
+  }
+}
