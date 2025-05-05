@@ -11,6 +11,14 @@ document.addEventListener("DOMContentLoaded", function () {
   const tuloksetRawObj = {};
   var tuloksetRArr: JotForm_Content[] = [];
 
+  var localhost = true;
+
+  //var serverUrl = "http://localhost:5000";
+  var serverUrl = "https://et-server-877cd73b3971.herokuapp.com";
+  if (localhost) {
+    serverUrl = "http://localhost:5000";
+  }
+
   var hakuParametrit = {
     offset: 0,
     limit: 1000,
@@ -26,7 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
     try {
       const axiosOptions = {
         method: "GET",
-        url: "http://localhost:5000/jotform/form-info/" + formId,
+        url: serverUrl + "/form-info/" + formId,
         headers: {
           "Content-Type": "application/json; charset=utf-8",
         },
@@ -50,8 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const getTilastot = async ({ offset, limit, filter, orderby }) => {
     const combinedTulokset = [];
     try {
-      const urli =
-        "http://localhost:5000/jotform/tilastot?hakuParametrit=" + JSON.stringify(hakuParametrit);
+      const urli = serverUrl + "/jotform/tilastot?hakuParametrit=" + JSON.stringify(hakuParametrit);
       console.log("kysely lähtee, ", urli);
       const axiosOptions = {
         method: "GET",
