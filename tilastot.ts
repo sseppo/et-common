@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const tuloksetRawObj = {};
   var tuloksetRArr: JotForm_Content[] = [];
 
-  var localhost = true;
+  var localhost = false;
 
   //var serverUrl = "http://localhost:5000";
   var serverUrl = "https://et-server-877cd73b3971.herokuapp.com";
