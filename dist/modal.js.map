@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../modal.ts"],
+  "sourcesContent": ["// Get the modal\nvar modal = document.getElementById(\"myModal\");\n\n// Get the image and insert it inside the modal - use its \"alt\" text as a caption\nvar img = document.getElementById(\"myImg\");\nvar modalImg = document.getElementById(\"img01\") as HTMLImageElement;\nvar captionText = document.getElementById(\"caption\");\n\nexport const openModal = function () {\n  if (!modal || !modalImg || !captionText) return;\n  modal.style.display = \"block\";\n  modalImg.src = (this as HTMLImageElement).src;\n  captionText.innerHTML = this.alt;\n};\n// Get the <span> element that closes the modal\nvar span = document.getElementsByClassName(\"close\")[0] as HTMLSpanElement;\n\n// When the user clicks on <span> (x), close the modal\nspan.onclick = function () {\n  if (!modal) return;\n  modal.style.display = \"none\";\n};\n"],
+  "mappings": "MACA,IAAIA,EAAQ,SAAS,eAAe,SAAS,EAGzCC,EAAM,SAAS,eAAe,OAAO,EACrCC,EAAW,SAAS,eAAe,OAAO,EAC1CC,EAAc,SAAS,eAAe,SAAS,EAEtCC,EAAY,UAAY,CAC/B,CAACJ,GAAS,CAACE,GAAY,CAACC,IAC5BH,EAAM,MAAM,QAAU,QACtBE,EAAS,IAAO,KAA0B,IAC1CC,EAAY,UAAY,KAAK,IAC/B,EAEIE,EAAO,SAAS,uBAAuB,OAAO,EAAE,CAAC,EAGrDA,EAAK,QAAU,UAAY,CACpBL,IACLA,EAAM,MAAM,QAAU,OACxB",
+  "names": ["modal", "img", "modalImg", "captionText", "openModal", "span"]
+}

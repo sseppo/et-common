@@ -11,6 +11,7 @@ import {
   rankedResult,
   rankedList,
 } from "./types/jotform_types";
+import { openModal } from "./modal";
 
 interface sortParams {
   tuloksetRawArr: JotForm_Content[];
@@ -53,6 +54,21 @@ interface bestFilteri {
   tulos: number;
   formObj: JotForm_Content;
 }
+
+const placeImgsrc = (imgsrc: string) => {
+  var modalImg = document.querySelector("#modal-image") as HTMLImageElement;
+  modalImg.src = imgsrc;
+};
+
+const resetWF = async () => {
+  window.Webflow && window.Webflow.require("ix2").init();
+};
+
+const openImgModal = (imgsrc: string) => {
+  var modal = document.getElementById("modal-wrapper");
+  if (!modal) return;
+  modal.showModal();
+};
 
 export const sortBy = async (parametrit: sortParams) => {
   try {
@@ -189,6 +205,11 @@ export const getSchool = async (answers: { [key: number]: Vastaukset[] }) => {
 
 export const getStudylane = async (answers: { [key: number]: Vastaukset[] }) => {
   var name = await getString("opintolinja", answers);
+  return name;
+};
+
+export const getImageUrl = async (answers: { [key: number]: Vastaukset[] }) => {
+  var name = await getString("typeA", answers);
   return name;
 };
 
@@ -403,11 +424,48 @@ export const prepareHTML = async (rankedList: rankedList, printStyle: string) =>
         "<h6>" + results[i].rank + ". Sija" + jaettuSija + ", aika " + tulosSekunteina + " s</h6>";
 
       var paragraphsAtRank = "";
+      var imageCode = "";
+      var imageButtonCode = "";
+      var imageStart = "";
+      var imageEnd = "";
+      var imageMiddle = "";
 
       for (let j = 0; j < results[i].nrOfOthersAtSameRank; j++) {
         const tekija = results[i + j].byPerson;
         const eventName = results[i + j].at || "";
         const institute = results[i + j].byInstitute || "";
+        const imageUrl = await getImageUrl(results[i + j].tulos.answers);
+
+        imageCode = "";
+        imageButtonCode = "";
+        imageStart = "";
+        imageEnd = "";
+        imageMiddle = "";
+        if (imageUrl !== "" && imageUrl !== "Not Defined") {
+          //imageCode = "<img src='" + imageUrl + "' class='tuuletuskuva-pieni' />";
+          /*
+          imageButtonCode =
+            "<button class='tuuletuskuva-pieni js-show-modal button js-show-modal' type='button' onclick='placeImgsrc2(\"" +
+            imageUrl +
+            "\"); '>Kuva</button>";
+            */
+          /*        
+          imageButtonCode =
+            "<a href=\"#modal-wrapper\" class='tuuletuskuva-pieni' type='button' onclick='placeImgsrc2(\"" +
+            imageUrl +
+            "\"); '>Katso Kuva</a>";
+*/
+          imageButtonCode =
+            '<BR /><a href="' + imageUrl + "\" type='button' target='_blank'> Katso Kuva</a>";
+
+          imageStart = "<div class='tulos-kuvalla'><div class='tulos'>";
+
+          imageMiddle = "</div>";
+          imageEnd = "</div>";
+
+          //          var modalImg = document.querySelector("#modal-image") as HTMLImageElement;
+          //         modalImg.src = imageUrl;
+        }
 
         var className = "";
         if (j % 2 === 0) {
@@ -425,7 +483,11 @@ export const prepareHTML = async (rankedList: rankedList, printStyle: string) =>
 
           var secondRow = "";
           if (eventName !== "" && eventName !== "Not Defined") {
-            secondRow += "<BR /><span class='tilastot-pienifontti'>At " + eventName + "</span>";
+            secondRow +=
+              "<BR /><span class='tilastot-pienifontti'>At " +
+              eventName +
+              imageButtonCode +
+              "</span>";
           }
 
           paragraphsAtRank += startParagraph + firstRow + secondRow + "</p>";
@@ -472,7 +534,10 @@ export const prepareHTML = async (rankedList: rankedList, printStyle: string) =>
       i = i + results[i].nrOfOthersAtSameRank - 1; // Skip the next entries with the same rank
 
       if (rankHeader !== undefined && paragraphsAtRank != "") {
-        const tuloste = rankHeader + paragraphsAtRank;
+        const tuloste = imageStart + rankHeader + paragraphsAtRank + imageMiddle + imageEnd;
+
+        //          imageStart + rankHeader + paragraphsAtRank + imageMiddle + imageButtonCode + imageEnd;
+        //imageStart + rankHeader + paragraphsAtRank + imageMiddle + imageButtonCode + imageEnd;
         contentToAdd += tuloste;
       }
     }

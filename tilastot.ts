@@ -17,19 +17,58 @@ import {
 } from "./tilastot_funktiot";
 import { resultSeries } from "./tilastot_sarjat";
 
+const refreshPage = () => {
+  // Modal functionality
+  //  document.addEventListener("DOMContentLoaded", () => {
+  const modal = document.querySelector(".js-modal"),
+    openModalBtn = document.querySelector(".js-show-modal"),
+    closeModalBtns = document.querySelectorAll(".js-close-modal"),
+    body = document.querySelector("body");
+
+  const closeModal = () => {
+    modal?.classList.remove("modal--opened");
+    body?.classList.remove("overflowHidden");
+    document.removeEventListener("keydown", handleEscClose);
+  };
+
+  const openModal = () => {
+    modal?.classList.add("modal--opened");
+    body?.classList.add("overflowHidden");
+    document.addEventListener("keydown", handleEscClose);
+  };
+
+  const handleEscClose = (e) => {
+    if (e.key === "Escape") {
+      closeModal();
+    }
+  };
+
+  if (modal) {
+    openModalBtn?.addEventListener("click", openModal);
+    closeModalBtns.forEach((btn) => btn.addEventListener("click", closeModal));
+  }
+
+  document.addEventListener("click", (event) => {
+    if (
+      modal?.classList.contains("modal--opened") &&
+      !event.target?.closest(".modal__content") &&
+      !event.target?.closest(".js-show-modal")
+    ) {
+      closeModal();
+    }
+  });
+  //  });
+
+  //  window.Webflow && window.Webflow.require("ix2").init();
+
+  const event = new Event("refreshWS");
+  document.dispatchEvent(event);
+};
+
 document.addEventListener("DOMContentLoaded", function () {
   var numberOfSubmissions = 0;
   var retreiveSubmissionsAmount = 0;
-  const tuloksetRawObj = {};
   var fromJotForm: JotForm_Content[] = [];
-
-  var perusSarjat = [];
-  var sarja_Opiskelijat_RodeoHarka_1: JotForm_Content[] | null = null;
-  var sarja_Opiskelijat_Rodeo_Ankka_1: JotForm_Content[] | null = null;
-  var sarja_Oppintolinja_RodeoHarka_1: JotForm_Content[] | null = null;
-  var sarja_Oppilaitos_RodeoHarka_1: JotForm_Content[] | null = null;
-
-  var ordederedSarja_Opiskelijat_RodeoHarka_1: JotForm_Content[] | null = null;
 
   var localhost = false;
 
@@ -61,7 +100,7 @@ document.addEventListener("DOMContentLoaded", function () {
       };
       const response = await axios(axiosOptions);
 
-      console.log("Form info response", response);
+      //log("Form info response", response);
       if (response.status !== 200) {
         console.error("Error fetching tilastot data:", response.statusText);
         return;
@@ -79,7 +118,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const combinedTulokset = [];
     try {
       const urli = serverUrl + "/jotform/tilastot?hakuParametrit=" + JSON.stringify(hakuParametrit);
-      console.log("kysely lähtee, ", urli);
+      //console.log("kysely lähtee, ", urli);
       const axiosOptions = {
         method: "GET",
         url: urli,
@@ -89,7 +128,7 @@ document.addEventListener("DOMContentLoaded", function () {
       };
       const response = await axios(axiosOptions);
 
-      console.log("response", response);
+      //      console.log("response", response);
       if (response.status !== 200) {
         console.error("Error fetching tilastot data:", response.statusText);
         return;
@@ -97,17 +136,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
       // Assuming the response data is in the expected format
       const tilastotData: JotFormData = response.data.data;
-      console.log("Tilastot data:", tilastotData);
+      //    console.log("Tilastot data:", tilastotData);
 
       const tuloksetRawObj = tilastotData.content;
-      console.log("tuloksetRawObj", tuloksetRawObj);
+      //  console.log("tuloksetRawObj", tuloksetRawObj);
 
       const tulolsetRawArr = [...Object.values(tuloksetRawObj)].flat();
-      console.log("tuloksetRawArray", tulolsetRawArr);
+      //console.log("tuloksetRawArray", tulolsetRawArr);
 
       fromJotForm = fromJotForm.concat(tulolsetRawArr);
 
-      console.log("tuloksetRArr tällä kiekalla", fromJotForm);
+      // console.log("tuloksetRArr tällä kiekalla", fromJotForm);
 
       // tarvittko hakea lisää? Sieltä kun tulee vain osa kerrallaan
       const resultSet = tilastotData.resultSet;
@@ -138,12 +177,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const rankedList: rankedList | null = await arrangeByRank(list);
 
       if (rankedList) {
-        console.log("rankedList", rankedList);
+        // console.log("rankedList", rankedList);
         rankedList.referenceId = placement;
         rankedList.insertAtDivId = placement;
 
         const toHTML = await prepareHTML(rankedList, printStyle);
-        console.log("toHTML", toHTML);
+        // console.log("toHTML", toHTML);
 
         const paikkaSivulla = document.querySelector("#" + placement);
 
@@ -155,136 +194,148 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   const rodeoBullResultsStudents = async () => {
-    // Rodeohärkä, Opiskelija, 1 - yksilösuoritus
-    const resultIndex = resultSeries.findIndex((s) => s.lyhenne === "o-r-n-1");
-    const sarja = resultSeries[resultIndex];
-    if (!sarja) return;
-    const sarjaObj = await sortBy({
-      tuloksetRawArr: fromJotForm,
-      rajaukset: {
-        sarja: "Opiskelija",
-        laji: "Rodeohärkä - normaali",
-        montakoOli: "1 - yksilösuoritus",
-      },
-    });
-
-    if (sarjaObj) {
-      resultSeries[resultIndex].array = sarjaObj;
-
-      const opintolinjat = await sortByBestOf({
-        tuloksetObjArray: sarjaObj,
-        bestOf: "opintolinja",
-        orderDirection: "desc",
+    const suorittajiaYksi = async () => {
+      // Rodeohärkä, Opiskelija, 1 - yksilösuoritus
+      const resultIndex = resultSeries.findIndex((s) => s.lyhenne === "o-r-n-1");
+      const sarja = resultSeries[resultIndex];
+      if (!sarja) return;
+      const sarjaObj = await sortBy({
+        tuloksetRawArr: fromJotForm,
+        rajaukset: {
+          sarja: "Opiskelija",
+          laji: "Rodeohärkä - normaali",
+          montakoOli: "1 - yksilösuoritus",
+        },
       });
 
-      const oppilaitokset = await sortByBestOf({
-        tuloksetObjArray: sarjaObj,
-        bestOf: "oppilaitos",
-        orderDirection: "desc",
-      });
+      if (sarjaObj) {
+        resultSeries[resultIndex].array = sarjaObj;
 
-      const opiskelijat = await sortByBestOf({
-        tuloksetObjArray: sarjaObj,
-        bestOf: "tulosSekunteina",
-        orderDirection: "desc",
-      });
+        const opintolinjat = await sortByBestOf({
+          tuloksetObjArray: sarjaObj,
+          bestOf: "opintolinja",
+          orderDirection: "desc",
+        });
 
-      // tulosta sarjat
-      if (opiskelijat) {
-        tulostaSivuille(opiskelijat, "o-r-n-1", "style-1");
-      }
-      if (oppilaitokset) {
-        tulostaSivuille(oppilaitokset, "oppilaitos-rh-1", "style-2");
-      }
-      if (opintolinjat) {
-        tulostaSivuille(opintolinjat, "opintolinja-rh-1", "style-3");
-      }
-    }
+        const oppilaitokset = await sortByBestOf({
+          tuloksetObjArray: sarjaObj,
+          bestOf: "oppilaitos",
+          orderDirection: "desc",
+        });
 
-    // Rdeohärkä, Opiskelija, 2 - 2 päällä!
-    const sarjaObj2 = await sortBy({
-      tuloksetRawArr: fromJotForm,
-      rajaukset: {
-        sarja: "Opiskelija",
-        laji: "Rodeohärkä - normaali",
-        montakoOli: "2 - 2 päällä!",
-      },
-    });
-    if (sarjaObj2) {
-      const opiskelijat2 = await sortByBestOf({
-        tuloksetObjArray: sarjaObj2,
-        bestOf: "tulosSekunteina",
-        orderDirection: "desc",
-      });
-      const oppilaitokset2 = await sortByBestOf({
-        tuloksetObjArray: sarjaObj2,
-        bestOf: "oppilaitos",
-        orderDirection: "desc",
-      });
-      const opintolinjat2 = await sortByBestOf({
-        tuloksetObjArray: sarjaObj2,
-        bestOf: "opintolinja",
-        orderDirection: "desc",
-      });
+        const opiskelijat = await sortByBestOf({
+          tuloksetObjArray: sarjaObj,
+          bestOf: "tulosSekunteina",
+          orderDirection: "desc",
+        });
 
-      // tulosta sarjat
-      if (opiskelijat2) {
-        tulostaSivuille(opiskelijat2, "o-r-n-2", "style-1");
+        // tulosta sarjat
+        if (opiskelijat) {
+          tulostaSivuille(opiskelijat, "o-r-n-1", "style-1");
+        }
+        if (oppilaitokset) {
+          tulostaSivuille(oppilaitokset, "oppilaitos-rh-1", "style-2");
+        }
+        if (opintolinjat) {
+          tulostaSivuille(opintolinjat, "opintolinja-rh-1", "style-3");
+        }
       }
-      if (oppilaitokset2) {
-        tulostaSivuille(oppilaitokset2, "oppilaitos-rh-2", "style-2");
-      }
-      if (opintolinjat2) {
-        tulostaSivuille(opintolinjat2, "opintolinja-rh-2", "style-3");
-      }
-    }
+    };
+    const suorittajiaKaksi = async () => {
+      // Rdeohärkä, Opiskelija, 2 - 2 päällä!
+      const sarjaObj2 = await sortBy({
+        tuloksetRawArr: fromJotForm,
+        rajaukset: {
+          sarja: "Opiskelija",
+          laji: "Rodeohärkä - normaali",
+          montakoOli: "2 - 2 päällä!",
+        },
+      });
+      if (sarjaObj2) {
+        const opiskelijat2 = await sortByBestOf({
+          tuloksetObjArray: sarjaObj2,
+          bestOf: "tulosSekunteina",
+          orderDirection: "desc",
+        });
+        const oppilaitokset2 = await sortByBestOf({
+          tuloksetObjArray: sarjaObj2,
+          bestOf: "oppilaitos",
+          orderDirection: "desc",
+        });
+        const opintolinjat2 = await sortByBestOf({
+          tuloksetObjArray: sarjaObj2,
+          bestOf: "opintolinja",
+          orderDirection: "desc",
+        });
 
-    // Rodeohärkä, Opiskelija, 3 - 3 päällä!
-    const sarjaObj3 = await sortBy({
-      tuloksetRawArr: fromJotForm,
-      rajaukset: {
-        sarja: "Opiskelija",
-        laji: "Rodeohärkä - normaali",
-        montakoOli: "3 - 3 päällä!",
-      },
-    });
-    if (sarjaObj3) {
-      const opiskelijat3 = await sortByBestOf({
-        tuloksetObjArray: sarjaObj3,
-        bestOf: "tulosSekunteina",
-        orderDirection: "desc",
-      });
-      const oppilaitokset3 = await sortByBestOf({
-        tuloksetObjArray: sarjaObj3,
-        bestOf: "oppilaitos",
-        orderDirection: "desc",
-      });
-      const opintolinjat3 = await sortByBestOf({
-        tuloksetObjArray: sarjaObj3,
-        bestOf: "opintolinja",
-        orderDirection: "desc",
-      });
+        // tulosta sarjat
+        if (opiskelijat2) {
+          tulostaSivuille(opiskelijat2, "o-r-n-2", "style-1");
+        }
+        if (oppilaitokset2) {
+          tulostaSivuille(oppilaitokset2, "oppilaitos-rh-2", "style-2");
+        }
+        if (opintolinjat2) {
+          tulostaSivuille(opintolinjat2, "opintolinja-rh-2", "style-3");
+        }
+      }
+    };
 
-      // tulosta sarjat
-      if (opiskelijat3) {
-        tulostaSivuille(opiskelijat3, "o-r-n-3", "style-1");
+    const suorittajiaKolme = async () => {
+      // Rodeohärkä, Opiskelija, 3 - 3 päällä!
+      const sarjaObj3 = await sortBy({
+        tuloksetRawArr: fromJotForm,
+        rajaukset: {
+          sarja: "Opiskelija",
+          laji: "Rodeohärkä - normaali",
+          montakoOli: "3 - 3 päällä!",
+        },
+      });
+      if (sarjaObj3) {
+        const opiskelijat3 = await sortByBestOf({
+          tuloksetObjArray: sarjaObj3,
+          bestOf: "tulosSekunteina",
+          orderDirection: "desc",
+        });
+        const oppilaitokset3 = await sortByBestOf({
+          tuloksetObjArray: sarjaObj3,
+          bestOf: "oppilaitos",
+          orderDirection: "desc",
+        });
+        const opintolinjat3 = await sortByBestOf({
+          tuloksetObjArray: sarjaObj3,
+          bestOf: "opintolinja",
+          orderDirection: "desc",
+        });
+
+        // tulosta sarjat
+        if (opiskelijat3) {
+          tulostaSivuille(opiskelijat3, "o-r-n-3", "style-1");
+        }
+        if (oppilaitokset3) {
+          tulostaSivuille(oppilaitokset3, "oppilaitos-rh-3", "style-2");
+        }
+        if (opintolinjat3) {
+          tulostaSivuille(opintolinjat3, "opintolinja-rh-3", "style-3");
+        }
       }
-      if (oppilaitokset3) {
-        tulostaSivuille(oppilaitokset3, "oppilaitos-rh-3", "style-2");
-      }
-      if (opintolinjat3) {
-        tulostaSivuille(opintolinjat3, "opintolinja-rh-3", "style-3");
-      }
-    }
+    };
+
+    const asyncApu = async () => {
+      await suorittajiaYksi();
+      await suorittajiaKaksi();
+      await suorittajiaKolme();
+    };
+    await asyncApu();
   };
 
   const rodeoAnkkaResultsStudents = async () => {
-    console.log("---------------> rodeoAnkkaResults");
+    // console.log("---------------> rodeoAnkkaResults");
     // Ankkarodeo, Opiskelija, 1 - yksilösuoritus
     const resultIndex = resultSeries.findIndex((s) => s.lyhenne === "o-a-n-1");
     const sarja = resultSeries[resultIndex];
-    console.log("resultIndex", resultIndex);
-    console.log("sarja", sarja);
+    // console.log("resultIndex", resultIndex);
+    // console.log("sarja", sarja);
     if (!sarja) return;
     const sarjaObj = await sortBy({
       tuloksetRawArr: fromJotForm,
@@ -295,7 +346,7 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     });
 
-    console.log("sarjaObj", sarjaObj);
+    //console.log("sarjaObj", sarjaObj);
     if (sarjaObj) {
       resultSeries[resultIndex].array = sarjaObj;
       const opintolinjat = await sortByBestOf({
@@ -392,11 +443,15 @@ document.addEventListener("DOMContentLoaded", function () {
   const asyncApu = async () => {
     await haku();
     //    await sarjat();
-
+    console.log(" haettu, sitten sortteeraus");
     await rodeoBullResultsStudents();
     await rodeoAnkkaResultsStudents();
     await rodeoBullResultsArtists();
+
+    // await refreshPage();
+    //window.Webflow && window.Webflow.require("ix2").init();
   };
   asyncApu();
 });
-console.log("tilastosivu2");
+
+//console.log("tilastosivu2");
