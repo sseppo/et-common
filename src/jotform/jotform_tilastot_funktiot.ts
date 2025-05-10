@@ -10,8 +10,8 @@ import {
   montakoOli,
   rankedResult,
   rankedList,
-} from "./types/jotform_types";
-import { openModal } from "./modal";
+} from "../../types/jotform_types";
+import { openModal } from "../../turhat/modal";
 
 interface sortParams {
   tuloksetRawArr: JotForm_Content[];
